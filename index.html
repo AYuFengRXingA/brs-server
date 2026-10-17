@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>BRS 服务器 · 1.21.8</title>
+<meta name="description" content="BRS 服务器 —— 1.21.8 纯净生存周目，Java / 基岩同服，账目全公开。生存 · 生电 · 建筑 · 整活 · 养老 · 科技。" />
+<meta name="theme-color" content="#06070c" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090b12'/%3E%3Cpath d='M6 20h20v6H6z' fill='%234de3ff'/%3E%3Cpath d='M10 10h12v8H10z' fill='%237dff9b'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="is-locked">
+
+<!-- ======================= 背景层 ======================= -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-vignette" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+<div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+
+<!-- ======================= 开机 / 加载 ======================= -->
+<div class="boot" id="boot">
+  <div class="boot-inner">
+    <div class="boot-mark">
+      <span class="bm-b">B</span><span class="bm-r">R</span><span class="bm-s">S</span>
+    </div>
+    <p class="boot-sub">SERVER&nbsp;·&nbsp;MINECRAFT&nbsp;1.21.8</p>
+    <div class="boot-bar"><i id="bootBar"></i></div>
+    <p class="boot-tip" id="bootTip">正在加载区块…</p>
+    <button class="boot-enter" id="enterBtn" aria-label="进入宣传页">
+      <span>点击进入</span>
+      <small>建议开启声音 · 支持键盘 ← → 空格</small>
+    </button>
+  </div>
+  <div class="boot-scan" aria-hidden="true"></div>
+</div>
+
+<!-- ======================= 顶部进度 ======================= -->
+<div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+<!-- ======================= 右侧导航点 ======================= -->
+<nav class="dots" id="dots" aria-label="幻灯片导航"></nav>
+
+<!-- ======================= 左下品牌 ======================= -->
+<div class="brand">
+  <span class="brand-dot"></span>
+  <b>BRS</b><span class="brand-slash">/</span><span id="slideIndex">01</span>
+  <span class="brand-total">/ 09</span>
+</div>
+
+<!-- ======================= 右下控制 ======================= -->
+<div class="controls">
+  <button class="ctrl" id="btnSound" title="声音开关 (M)" aria-pressed="true">
+    <svg viewBox="0 0 24 24" class="ico-on"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" opacity=".6"/></svg>
+    <svg viewBox="0 0 24 24" class="ico-off"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l4 6M21 9l-4 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span class="ctrl-label">声音</span>
+  </button>
+  <button class="ctrl" id="btnAuto" title="自动播放 (P)" aria-pressed="false">
+    <svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>
+    <span class="ctrl-label">自动</span>
+  </button>
+  <button class="ctrl" id="btnFull" title="全屏 (F)">
+    <svg viewBox="0 0 24 24" class="ico-full"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span class="ctrl-label">全屏</span>
+  </button>
+  <button class="ctrl" id="btnHelp" title="快捷键 (?)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="17" r="1" /></svg>
+    <span class="ctrl-label">帮助</span>
+  </button>
+</div>
+
+<!-- ======================= 快捷键面板 ======================= -->
+<div class="help" id="help" aria-hidden="true">
+  <div class="help-card">
+    <h3>操作方式</h3>
+    <ul>
+      <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><span>上一页 / 下一页</span></li>
+      <li><kbd>空格</kbd><span>下一页</span></li>
+      <li><kbd>滚轮</kbd><span>翻页</span></li>
+      <li><kbd>M</kbd><span>静音切换</span></li>
+      <li><kbd>P</kbd><span>自动播放</span></li>
+      <li><kbd>F</kbd><span>全屏</span></li>
+      <li><kbd>Home</kbd><span>回到封面</span></li>
+      <li><kbd>?</kbd><span>打开 / 关闭本面板</span></li>
+    </ul>
+    <button class="btn btn-ghost btn-sm" id="helpClose">知道了</button>
+  </div>
+</div>
+
+<!-- ======================= 幻灯片 ======================= -->
+<main class="deck" id="deck">
+
+  <!-- 01 封面 ------------------------------------------------------------ -->
+  <section class="slide" id="s-cover" data-id="cover" data-title="封面">
+    <div class="cubes" aria-hidden="true">
+      <div class="cube c1"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="cube c2"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="cube c3"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+
+    <div class="slide-body cover-body">
+      <p class="kicker" data-anim="up" style="--i:0">
+        <span class="k-dot"></span>MINECRAFT&nbsp;·&nbsp;JAVA&nbsp;+&nbsp;BEDROCK&nbsp;·&nbsp;1.21.8
+      </p>
+
+      <h1 class="hero" data-anim="zoom" style="--i:1">
+        <span class="hero-line">
+          <em>B</em><em>R</em><em>S</em>
+        </span>
+        <span class="hero-line hero-line-2">服 务 器</span>
+        <span class="hero-glitch" aria-hidden="true">BRS</span>
+      </h1>
+
+      <p class="hero-desc" data-anim="up" style="--i:2">
+        生存 · 生电 · 建筑 · 整活 · 养老 · 科技
+      </p>
+
+      <div class="hero-meta" data-anim="up" style="--i:3">
+        <span>纯净一周目</span><i></i>
+        <span>Java / 基岩同服</span><i></i>
+        <span>账目公开</span><i></i>
+        <span>存档可下载</span>
+      </div>
+
+      <div class="hero-cta" data-anim="up" style="--i:4">
+        <button class="btn btn-primary" data-goto="join">
+          <span>拿 IP 进服</span>
+          <svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <button class="btn btn-ghost" data-goto="play">先看看玩什么</button>
+      </div>
+
+      <div class="scroll-hint" data-anim="up" style="--i:5">
+        <span class="mouse"><i></i></span>
+        滚动 / 空格 / 方向键继续
+      </div>
+    </div>
+
+    <div class="corner-note">BRS PUBLIC SERVER · SINCE 2025.08</div>
+  </section>
+
+  <!-- 02 概览 ------------------------------------------------------------ -->
+  <section class="slide" id="s-about" data-id="about" data-title="关于">
+    <div class="slide-body">
+      <header class="s-head">
+        <p class="kicker" data-anim="up"><span class="k-dot"></span>01 — 关于这台服务器</p>
+        <h2 class="s-title" data-anim="up" style="--i:1">
+          一台塞在自家机柜里的服务器，<br />
+          <span class="hl">账目、配置、存档，全摊开给你看。</span>
+        </h2>
+      </header>
+
+      <div class="about-grid">
+        <div class="about-quote" data-anim="left" style="--i:2">
+          <div class="quote-mark">“</div>
+          <p>
+            没有充值商城，没有 VIP 特权，没有“首充 6 元送钻石剑”。
+            钱只花在电费、内网穿透和硬件上，谁捐了多少、花在哪，都写在下面那一页。
+          </p>
+          <p class="quote-by">—— 如果你想找个能安心盖房子的地方，看完再决定。</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat" data-anim="up" style="--i:3">
+            <b data-count="1.21.8" data-decimals="2">0</b>
+            <span>游戏版本 / 原版客户端直连</span>
+          </div>
+          <div class="stat" data-anim="up" style="--i:4">
+            <b data-count="6">0</b>
+            <span>玩法方向 / 生存→科技</span>
+          </div>
+          <div class="stat" data-anim="up" style="--i:5">
+            <b data-count="2">0</b>
+            <span>台实体机 / 主服 + 备份服</span>
+          </div>
+          <div class="stat stat-money" data-anim="up" style="--i:6">
+            <b><small>¥</small><span data-count="964.97" data-decimals="2">0</span></b>
+            <span>玩家凑出来的开服资金</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chips" data-anim="up" style="--i:7">
+        <span class="chip">允许 masa 全家桶</span>
+        <span class="chip">允许辅助 / 优化 mod</span>
+        <span class="chip">禁止真挂</span>
+        <span class="chip">管理会回档</span>
+        <span class="chip">机器有人修</span>
+        <span class="chip">存档打包下载</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 玩法 ------------------------------------------------------------ -->
+  <section class="slide" id="s-play" data-id="play" data-title="玩法">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>02 — 你能玩到什么</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">六种玩法，<span class="hl">同一个世界</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          不是六个分服，是一张地图上的六种活法。<br />
+          你可以上午生电、下午盖房、晚上在群里整活。
+        </p>
+      </header>
+
+      <div class="cards" id="cards">
+        <article class="card" data-anim="up" style="--i:3" data-sound="card">
+          <div class="card-ico ico-grass"></div>
+          <h3>生存</h3>
+          <p>原版节奏，不折腾数值。第一天挖洞，第七天盖房，第三十天开始嫌自己的屋顶丑。</p>
+          <span class="card-tag">原版</span>
+        </article>
+        <article class="card" data-anim="up" style="--i:4" data-sound="card">
+          <div class="card-ico ico-red"></div>
+          <h3>生电</h3>
+          <p>红石机器自由发挥，刷铁机、甘蔗机、全自动农场随便造，服务器扛得住。</p>
+          <span class="card-tag">红石 / 机器</span>
+        </article>
+        <article class="card" data-anim="up" style="--i:5" data-sound="card">
+          <div class="card-ico ico-fly"></div>
+          <h3>建筑</h3>
+          <p><code>/flyplayer on</code> 开启 50 格范围飞行，建筑党狂喜，落地不会摔成一地掉落物。</p>
+          <span class="card-tag">50 格飞行</span>
+        </article>
+        <article class="card" data-anim="up" style="--i:6" data-sound="card">
+          <div class="card-ico ico-bot"></div>
+          <h3>整活</h3>
+          <p>假人、TNT、集体互坑都行。唯一的底线：别拆别人家，别刷人头。</p>
+          <span class="card-tag">假人 play</span>
+        </article>
+        <article class="card" data-anim="up" style="--i:7" data-sound="card">
+          <div class="card-ico ico-farm"></div>
+          <h3>养老</h3>
+          <p>上线种田、钓鱼、看日落。没有每日任务，没有打卡，离线也不会掉装备。</p>
+          <span class="card-tag">无 KPI</span>
+        </article>
+        <article class="card" data-anim="up" style="--i:8" data-sound="card">
+          <div class="card-ico ico-tech"></div>
+          <h3>科技</h3>
+          <p>模组服内测进行中，目前只对管理员开放——说人话：先让管理去踩坑。</p>
+          <span class="card-tag">内测中</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 硬件 ------------------------------------------------------------ -->
+  <section class="slide" id="s-tech" data-id="tech" data-title="硬件">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>03 — 底下那台机器</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">不卡，是因为<span class="hl">真的换过硬件</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          主服跑游戏，备份服存存档与数据库。<br />
+          所有性能指标你都能用指令自己查。
+        </p>
+      </header>
+
+      <div class="tech-grid">
+        <div class="rack" data-anim="left" style="--i:3">
+          <div class="rack-head">
+            <span class="led led-on"></span>
+            <b>主服 / GAME</b>
+            <em>运行中</em>
+          </div>
+          <ul class="spec">
+            <li style="--w:100%"><span>CPU</span><b>R7 5700X</b><em>8C16T · 4.6GHz</em></li>
+            <li style="--w:86%"><span>内存</span><b>DDR4 32GB</b><em>3200MHz</em></li>
+            <li style="--w:62%"><span>硬盘</span><b>SSD 256G</b><em>系统 + 存档</em></li>
+            <li style="--w:78%"><span>网络</span><b>1000M / 80M</b><em>下行 / 上行</em></li>
+          </ul>
+          <div class="rack-foot">
+            <span>服务端</span><b>Leaves 1.21.8</b>
+            <span class="sep"></span>
+            <span>假人</span><b>服务端自带</b>
+          </div>
+        </div>
+
+        <div class="rack rack-2" data-anim="right" style="--i:4">
+          <div class="rack-head">
+            <span class="led led-soft"></span>
+            <b>备份服 / BACKUP</b>
+            <em>冷备</em>
+          </div>
+          <ul class="spec">
+            <li style="--w:48%"><span>CPU</span><b>i3-3220</b><em>2C4T · 3.3GHz</em></li>
+            <li style="--w:34%"><span>内存</span><b>DDR3 4GB</b><em>够用就好</em></li>
+            <li style="--w:56%"><span>硬盘</span><b>SSD 64G + HDD 500G</b><em>系统 / 备份</em></li>
+            <li style="--w:40%"><span>用途</span><b>存档 · 数据库</b><em>1/2/4 周目</em></li>
+          </ul>
+          <div class="rack-foot">
+            <span>可下载</span><b>旧服 1 / 2 / 4 周目存档</b>
+          </div>
+        </div>
+
+        <div class="tech-side">
+          <div class="mini-card" data-anim="up" style="--i:5">
+            <span class="mini-k">自查性能</span>
+            <p><code>/tps</code> <code>/mspt</code> <code>/gc</code></p>
+            <small>20 才算健康，mspt 超过 50ms 就该管管机器了。</small>
+          </div>
+          <div class="mini-card" data-anim="up" style="--i:6">
+            <span class="mini-k">崩了也不慌</span>
+            <p>回档 · 理赔</p>
+            <small>意外崩服、误删、甚至按 Q 放剑气造成的损失，都可以找管理处理。</small>
+          </div>
+          <div class="mini-card" data-anim="up" style="--i:7">
+            <span class="mini-k">查案系统</span>
+            <p><code>/co i</code></p>
+            <small>左键查放置破坏，右键查箱子互动。家被炸了？能翻到是谁。</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 跨平台 ---------------------------------------------------------- -->
+  <section class="slide" id="s-cross" data-id="cross" data-title="跨平台">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>04 — Java × 基岩</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">手机和电脑，<span class="hl">进的是同一个世界</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          基岩账号可以和 Java 账号绑定，<br />
+          物品栏、成就、坐标全部共享。
+        </p>
+      </header>
+
+      <div class="cross-wrap">
+        <div class="platforms">
+          <div class="pf pf-java" data-anim="left" style="--i:3">
+            <div class="pf-badge">JAVA EDITION</div>
+            <div class="pf-screen"><span class="pf-msg">Java 版 · 键盘鼠标</span></div>
+            <ul>
+              <li>原版客户端即可</li>
+              <li>masa / 优化 mod 可用</li>
+              <li>群文件整合包推荐</li>
+            </ul>
+          </div>
+          <div class="link-glyph" data-anim="zoom" style="--i:4" aria-hidden="true">⇄</div>
+          <div class="pf pf-bedrock" data-anim="right" style="--i:5">
+            <div class="pf-badge">BEDROCK EDITION</div>
+            <div class="pf-screen"><span class="pf-msg">基岩版 · 手机 / 平板</span></div>
+            <ul>
+              <li>进服确认有 <code>BE.</code> 前缀</li>
+              <li>没有前缀就重进一次</li>
+              <li>绑定后共用 Java 身份</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="steps" data-anim="up" style="--i:6">
+          <h4>账号绑定 · 五步</h4>
+          <ol>
+            <li><b>01</b><span>先用基岩版进服，<em>把物品栏清到箱子</em></span></li>
+            <li><b>02</b><span>再用 Java 版进服</span></li>
+            <li><b>03</b><span>输入 <code>/linkaccount &lt;基岩名&gt;</code>，<em>不要带 BE. 前缀</em></span></li>
+            <li><b>04</b><span>把聊天框里给你的那条命令，在基岩版里输入</span></li>
+            <li><b>05</b><span>基岩版会被踢出并提示“已关联”，之后就用 Java 身份玩</span></li>
+          </ol>
+          <p class="steps-note">首次进服记得 <code>/reg 密码 密码</code> 注册，之后 <code>/l 密码</code> 登录。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 指令终端 -------------------------------------------------------- -->
+  <section class="slide" id="s-cmd" data-id="cmd" data-title="指令">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>05 — 指令都开着</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">该有的权限，<span class="hl">一项没锁</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          点下面的指令，或者直接在终端里敲。<br />
+          这里是模拟终端，不会真的连服务器。
+        </p>
+      </header>
+
+      <div class="term-wrap">
+        <div class="term" data-anim="zoom" style="--i:3" id="term">
+          <div class="term-bar">
+            <span class="t-dot r"></span><span class="t-dot y"></span><span class="t-dot g"></span>
+            <b>BRS@server ~ chat</b>
+            <span class="t-live">LIVE</span>
+          </div>
+          <div class="term-body" id="termBody">
+            <div class="t-line t-sys">BRS 聊天终端 · 输入 help 查看可用指令</div>
+          </div>
+          <form class="term-input" id="termForm" autocomplete="off">
+            <span class="t-prompt">/</span>
+            <input id="termInput" type="text" spellcheck="false" placeholder="输入指令，例如 home" aria-label="输入指令" />
+            <button type="submit" class="t-send">执行</button>
+          </form>
+        </div>
+
+        <div class="cmd-side">
+          <div class="cmd-group" data-anim="right" style="--i:4">
+            <h5>跑图 / 回家</h5>
+            <div class="cmd-chips">
+              <button class="cmd-chip" data-cmd="/home">/home 回家</button>
+              <button class="cmd-chip" data-cmd="/warp">/warp 传送点</button>
+              <button class="cmd-chip" data-cmd="/spawn">/spawn 出生点</button>
+              <button class="cmd-chip" data-cmd="/back">/back 回上次位置</button>
+            </div>
+          </div>
+          <div class="cmd-group" data-anim="right" style="--i:5">
+            <h5>建筑 / 背包</h5>
+            <div class="cmd-chips">
+              <button class="cmd-chip" data-cmd="/flyplayer on">/flyplayer on</button>
+              <button class="cmd-chip" data-cmd="/workbench">/workbench</button>
+              <button class="cmd-chip" data-cmd="/enderchest">/enderchest</button>
+              <button class="cmd-chip" data-cmd="/anvil">/anvil</button>
+            </div>
+          </div>
+          <div class="cmd-group" data-anim="right" style="--i:6">
+            <h5>生电 / 查案</h5>
+            <div class="cmd-chips">
+              <button class="cmd-chip" data-cmd="/bot list">/bot list</button>
+              <button class="cmd-chip" data-cmd="/co i">/co i</button>
+              <button class="cmd-chip" data-cmd="/tps">/tps</button>
+              <button class="cmd-chip" data-cmd="/gc">/gc</button>
+            </div>
+          </div>
+          <div class="cmd-group" data-anim="right" style="--i:7">
+            <h5>社交</h5>
+            <div class="cmd-chips">
+              <button class="cmd-chip" data-cmd="/tpa">/tpa 玩家</button>
+              <button class="cmd-chip" data-cmd="/tell">/tell 私聊</button>
+              <button class="cmd-chip" data-cmd="/afk">/afk 挂机</button>
+              <button class="cmd-chip" data-cmd="/realname">/realname</button>
+            </div>
+          </div>
+
+          <div class="cmd-tip" data-anim="up" style="--i:8">
+            <b>第一次进服</b>
+            <p><code>/reg 密码 密码</code> 注册，之后用 <code>/l 密码</code> 登录。</p>
+            <small>假人、回滚查询等完整用法在群文件文档里。</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 账本 ------------------------------------------------------------ -->
+  <section class="slide" id="s-ledger" data-id="ledger" data-title="账目">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>06 — 钱去哪了</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">开服的钱，<span class="hl">一分都查得到</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          电费用电能计量器拍照公示，<br />
+          穿透、硬件、插座面板一笔一笔列着。
+        </p>
+      </header>
+
+      <div class="ledger-wrap">
+        <div class="ledger-nums">
+          <div class="ln" data-anim="up" style="--i:3">
+            <span>玩家赞助合计</span>
+            <b>¥<em data-count="964.97" data-decimals="2">0</em></b>
+          </div>
+          <div class="ln" data-anim="up" style="--i:4">
+            <span>已花出去</span>
+            <b class="neg">¥<em data-count="597.76" data-decimals="2">0</em></b>
+          </div>
+          <div class="ln" data-anim="up" style="--i:5">
+            <span>月均开销</span>
+            <b>¥<em data-count="50">0</em><small>/月</small></b>
+          </div>
+          <div class="ln ln-hl" data-anim="up" style="--i:6">
+            <span>账上还剩</span>
+            <b>¥<em data-count="267.21" data-decimals="2">0</em></b>
+          </div>
+        </div>
+
+        <div class="ledger-detail" data-anim="right" style="--i:7">
+          <h4>支出明细</h4>
+          <ul>
+            <li><span>电费（545.1 kWh × 0.6 元）</span><b>¥327.00</b></li>
+            <li><span>OPENFRP 内网穿透 SVIP（有效期至 2027/2/6）</span><b>¥300.00</b></li>
+            <li><span>OPENFRP 穿透流量 110G</span><b>¥55.00</b></li>
+            <li><span>公牛插座面板 G39</span><b>¥15.76</b></li>
+          </ul>
+          <div class="ledger-bar">
+            <i style="--p:62%"></i>
+          </div>
+          <div class="ledger-scale">
+            <span>已用 62%</span><span>结余 ¥267.21</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sponsors" data-anim="up" style="--i:8">
+        <div class="sponsors-label">赞助名单 <small>（按金额）</small></div>
+        <div class="marquee">
+          <div class="marquee-track" id="marqueeTrack"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 加入 ------------------------------------------------------------ -->
+  <section class="slide" id="s-join" data-id="join" data-title="加入">
+    <div class="slide-body">
+      <header class="s-head s-head-row">
+        <div>
+          <p class="kicker" data-anim="up"><span class="k-dot"></span>07 — 怎么进来</p>
+          <h2 class="s-title" data-anim="up" style="--i:1">点一下，<span class="hl">复制 IP</span></h2>
+        </div>
+        <p class="s-sub" data-anim="up" style="--i:2">
+          优先用 IPv6 直连，<br />
+          IPv4 是内网穿透，流量有限。
+        </p>
+      </header>
+
+      <div class="join-grid">
+        <div class="ip-col">
+          <div class="ip-card ip-primary" data-anim="up" style="--i:3">
+            <div class="ip-top"><span class="ip-badge">IPv6 · 推荐</span><span class="ip-plat">Java 版</span></div>
+            <button class="ip-addr" data-copy="mcv6.blockrg.top:25565">
+              <span>mcv6.blockrg.top:25565</span>
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 5H6a1 1 0 0 0-1 1v9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+            <div class="ip-alt">
+              备用 <code data-copy="ipv6mc.brs.frpok.com:25565">ipv6mc.brs.frpok.com:25565</code>
+              <code data-copy="ipv6mc.brs.gorsu.ch:25565">ipv6mc.brs.gorsu.ch:25565</code>
+            </div>
+          </div>
+
+          <div class="ip-card" data-anim="up" style="--i:4">
+            <div class="ip-top"><span class="ip-badge">IPv6</span><span class="ip-plat">基岩版</span></div>
+            <button class="ip-addr" data-copy="mcv6.blockrg.top:19132">
+              <span>mcv6.blockrg.top:19132</span>
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 5H6a1 1 0 0 0-1 1v9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+            <div class="ip-alt">
+              备用 <code data-copy="ipv6mc.brs.frpok.com:19132">ipv6mc.brs.frpok.com:19132</code>
+            </div>
+          </div>
+
+          <div class="ip-card ip-dim" data-anim="up" style="--i:5">
+            <div class="ip-top"><span class="ip-badge ip-badge-warn">IPv4 · 兜底</span><span class="ip-plat">Java / 基岩</span></div>
+            <button class="ip-addr" data-copy="mcv4.blockrg.top:20000">
+              <span>mcv4.blockrg.top:20000</span>
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 5H6a1 1 0 0 0-1 1v9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+            <div class="ip-alt">
+              基岩 <code data-copy="mcv4.blockrg.top:20001">mcv4.blockrg.top:20001</code>
+            </div>
+          </div>
+
+          <p class="ip-note" data-anim="up" style="--i:6">
+            连不上 IPv6？先试试路由器开 IPv6，或叫宽带师傅上门。实在不行再用 IPv4。
+          </p>
+        </div>
+
+        <div class="join-side">
+          <div class="ver-badge" data-anim="zoom" style="--i:3">
+            <span>VERSION</span><b>1.21.8</b><small>原版客户端直连</small>
+          </div>
+
+          <div class="how" data-anim="up" style="--i:4">
+            <h4>进服五步</h4>
+            <ol>
+              <li><b>1</b>群文件「启动器」里下 PCL2 或 HMCL</li>
+              <li><b>2</b>群文件「整合包」里下对应包</li>
+              <li><b>3</b>用 PCL2 / HMCL 导入并安装</li>
+              <li><b>4</b>启动游戏 → 多人游戏</li>
+              <li><b>5</b>添加服务器，填上面的 IP</li>
+            </ol>
+          </div>
+
+          <div class="contact" data-anim="up" style="--i:5">
+            <button class="btn btn-primary" data-copy="808637100">
+              <span>复制 QQ 群号 808637100</span>
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 5H6a1 1 0 0 0-1 1v9" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-sm" data-copy="mcv6.blockrg.top:25565">复制 IP</button>
+          </div>
+          <p class="contact-more">
+            打开 QQ 搜索群号即可加入 · 另有 KOOK 语音频道、自研网页聊天室，群内直达。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 结尾 ------------------------------------------------------------ -->
+  <section class="slide" id="s-end" data-id="end" data-title="结尾">
+    <div class="slide-body end-body">
+      <p class="kicker" data-anim="up"><span class="k-dot"></span>08 — 最后一页</p>
+      <h2 class="end-title" data-anim="zoom" style="--i:1">
+        世界还空着，<br />
+        <span class="hl">来盖第一栋房子。</span>
+      </h2>
+      <p class="end-sub" data-anim="up" style="--i:2">
+        1.21.8 · 纯净一周目 · Java / 基岩同服 · 账目公开
+      </p>
+
+      <div class="end-cta" data-anim="up" style="--i:3">
+        <button class="btn btn-primary btn-lg" data-copy="mcv6.blockrg.top:25565">
+          <span>复制服务器 IP</span>
+        </button>
+        <button class="btn btn-ghost btn-lg" data-copy="808637100">复制群号 808637100</button>
+      </div>
+
+      <div class="end-meta" data-anim="up" style="--i:4">
+        <span>BRS SERVER</span><i></i><span>2025.08 开服</span><i></i><span>由玩家凑钱维护</span>
+      </div>
+
+      <button class="replay" id="replay" data-anim="up" style="--i:5">
+        <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        从头再看一遍
+      </button>
+    </div>
+    <div class="corner-note">本页信息以群内文档为准 · 宣传展示用</div>
+  </section>
+</main>
+
+<!-- 复制提示 -->
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastText"></span></div>
+
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
